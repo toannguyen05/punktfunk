@@ -1,0 +1,70 @@
+# Fork-only: builds and tests the iOS client on a GitHub macOS runner, then packages an
+# unsigned .ipa to sign and sideload from Windows. Not part of any upstream PR.
+name: ios-build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/**', 'fix/**']
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select the newest release Xcode 26
+        run: |
+          app="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)"
+          if [ -z "$app" ]; then echo "::error::no release Xcode 26 on this runner"; ls /Applications; exit 1; fi
+          sudo xcode-select -s "$app/Contents/Developer"
+          xcodebuild -version
+
+      - name: Rust toolchain (the repo's pin, mac + iOS targets)
+        run: |
+          tc="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
+          rustup toolchain install "$tc" --profile minimal \
+            --target aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim
+          command -v cmake >/dev/null || brew install cmake
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ios-cargo-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: ios-cargo-
+
+      - name: Build PunktfunkCore.xcframework (mac + iOS slices)
+        run: BUILD_IOS=1 bash scripts/build-xcframework.sh
+
+      - name: Metal toolchain
+        run: sh scripts/ci/ensure-metal-toolchain.sh
+
+      - name: Unit tests (virtual pad + overlay blob)
+        working-directory: clients/apple
+        run: swift test --filter 'VirtualPadTests|OverlayActionsTests'
+
+      - name: Type-check the iOS app
+        working-directory: clients/apple
+        run: |
+          xcodebuild -project Punktfunk.xcodeproj -scheme Punktfunk-iOS \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+
+      - name: Unsigned device build, packaged as .ipa
+        working-directory: clients/apple
+        run: |
+          xcodebuild -project Punktfunk.xcodeproj -scheme Punktfunk-iOS -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath build/dd \
+            CODE_SIGNING_ALLOWED=NO build
+          mkdir -p build/ipa/Payload
+          cp -R build/dd/Build/Products/Release-iphoneos/*.app build/ipa/Payload/
+          (cd build/ipa && zip -qry ../Punktfunk-unsigned.ipa Payload)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Punktfunk-unsigned-ipa
+          path: clients/apple/build/Punktfunk-unsigned.ipa
+          retention-days: 7
