@@ -9,7 +9,8 @@ on:
 
 jobs:
   ios:
-    runs-on: macos-26
+    # Xcode 27 ships on its own image label, not macos-26.
+    runs-on: xcode-27
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -17,8 +18,13 @@ jobs:
       # main uses iOS 27 SDK API (GCControllerHomeButtonSettingsManager): Xcode 27 or newer.
       - name: Select the newest release Xcode
         run: |
-          ls -d /Applications/Xcode*.app
-          app="$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)"
+          best=""; app=""
+          for a in /Applications/Xcode*.app; do
+            case "$a" in *[Bb]eta*) continue ;; esac
+            v="$(defaults read "$a/Contents/Info" CFBundleShortVersionString 2>/dev/null)" || continue
+            echo "$v  $a"
+            if [ -z "$best" ] || [ "$(printf '%s\n%s\n' "$best" "$v" | sort -V | tail -1)" = "$v" ]; then best="$v"; app="$a"; fi
+          done
           if [ -z "$app" ]; then echo "::error::no release Xcode on this runner"; exit 1; fi
           sudo xcode-select -s "$app/Contents/Developer"
           xcodebuild -version
