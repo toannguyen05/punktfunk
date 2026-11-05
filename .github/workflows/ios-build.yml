@@ -14,12 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Select the newest release Xcode 26
+      # main uses iOS 27 SDK API (GCControllerHomeButtonSettingsManager): Xcode 27 or newer.
+      - name: Select the newest release Xcode
         run: |
-          app="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)"
-          if [ -z "$app" ]; then echo "::error::no release Xcode 26 on this runner"; ls /Applications; exit 1; fi
+          ls -d /Applications/Xcode*.app
+          app="$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -vi beta | sort -V | tail -1)"
+          if [ -z "$app" ]; then echo "::error::no release Xcode on this runner"; exit 1; fi
           sudo xcode-select -s "$app/Contents/Developer"
           xcodebuild -version
+          xcodebuild -version | awk 'NR==1 { split($2, v, "."); if (v[1] < 27) { print "::error::need Xcode 27+, got " $2; exit 1 } }'
 
       - name: Rust toolchain (the repo's pin, mac + iOS targets)
         run: |
@@ -28,7 +31,8 @@ jobs:
             --target aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim
           command -v cmake >/dev/null || brew install cmake
 
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: cargo-cache
         with:
           path: |
             ~/.cargo/registry
@@ -39,6 +43,16 @@ jobs:
 
       - name: Build PunktfunkCore.xcframework (mac + iOS slices)
         run: BUILD_IOS=1 bash scripts/build-xcframework.sh
+
+      # Saved before the Swift steps, so a Swift failure still keeps the Rust build.
+      - uses: actions/cache/save@v4
+        if: always() && steps.cargo-cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
 
       - name: Metal toolchain
         run: sh scripts/ci/ensure-metal-toolchain.sh
