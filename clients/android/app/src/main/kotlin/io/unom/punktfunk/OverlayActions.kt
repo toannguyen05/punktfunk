@@ -198,9 +198,16 @@ fun keyLegend(k: String): String = when (k.trim().lowercase()) {
 /**
  * One control's layout override: [x] and [y] place its centre as fractions of the layer's width
  * and height, [scale] sizes it about that centre, [hidden] takes it out of the stream (the
- * editor still shows it, ghosted). An absent field keeps the preset's value.
+ * editor still shows it, ghosted), [fullPress] makes a trigger full while touched. An absent
+ * field keeps the preset's value.
  */
-data class PadTweak(val x: Float? = null, val y: Float? = null, val scale: Float? = null, val hidden: Boolean = false)
+data class PadTweak(
+    val x: Float? = null,
+    val y: Float? = null,
+    val scale: Float? = null,
+    val hidden: Boolean = false,
+    val fullPress: Boolean = false,
+)
 
 /**
  * The virtual controller: [layout] is `full`, `sticks` or `dpad`; [opacity] and [scale] are the
@@ -256,6 +263,7 @@ data class OverlayConfig(
                         t.y?.let { put("y", it.toDouble()) }
                         t.scale?.let { put("scale", it.toDouble()) }
                         if (t.hidden) put("hidden", true)
+                        if (t.fullPress) put("full_press", true)
                     },
                 )
             }
@@ -323,6 +331,7 @@ data class OverlayConfig(
                                 y = t.optDouble("y").takeIf { !it.isNaN() }?.toFloat(),
                                 scale = t.optDouble("scale").takeIf { !it.isNaN() }?.toFloat(),
                                 hidden = t.optBoolean("hidden", false),
+                                fullPress = t.optBoolean("full_press", false),
                             ),
                         )
                     }

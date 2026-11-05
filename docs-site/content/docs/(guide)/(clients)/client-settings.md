@@ -127,7 +127,7 @@ shortcuts. It's on every app and in the console (which edits your defaults only)
 | **Layout** | Full | **Full**, **Sticks and shoulders** or **D-pad and face buttons** |
 | **Opacity** | 45 % | 15–100 % |
 | **Scale** | 100 % | 60–160 % |
-| **Edit layout** | — | Move, resize (50–200 %) or hide each control. Wide and upright screens keep separate layouts. |
+| **Edit layout** | — | Move, resize (50–200 %) or hide each control; set a trigger to **Full press on touch**. Wide and upright screens keep separate layouts. |
 
 ## Behavior
 

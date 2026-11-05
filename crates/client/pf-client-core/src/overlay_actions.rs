@@ -242,8 +242,9 @@ pub const PAD_TWEAK_SCALE_MIN: f32 = 0.5;
 pub const PAD_TWEAK_SCALE_MAX: f32 = 2.0;
 
 /// Per-control override. `x`/`y` are centre as fractions of the layer;
-/// `hidden` drops it from the stream (the editor still ghosts it). Absent
-/// fields keep the preset.
+/// `hidden` drops it from the stream (the editor still ghosts it);
+/// `full_press` makes a trigger full while touched. Absent fields keep the
+/// preset.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PadTweak {
@@ -255,6 +256,8 @@ pub struct PadTweak {
     pub scale: Option<f32>,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub hidden: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub full_press: bool,
 }
 
 /// Virtual controller (Android and Apple). `layout` is `full`, `sticks` or

@@ -73,6 +73,13 @@ final class VirtualPadTests: XCTestCase {
         XCTAssertEqual(out.count, base.count)
     }
 
+    func testAFullPressTweakReachesOnlyItsTrigger() {
+        let out = applyPadTweaks(padControls(layout: "full", w: 933, h: 420),
+                                 tweaks: ["rt": PadTweak(fullPress: true)], w: 933, h: 420)
+        XCTAssertTrue(out.first { $0.id == "rt" }!.fullPress)
+        XCTAssertFalse(out.first { $0.id == "lt" }!.fullPress)
+    }
+
     func testAPadConfigPicksTheLayerClassForItsOverrides() {
         let pad = PadConfig(controls: ["face": PadTweak(hidden: true)],
                             controlsNarrow: ["ls": PadTweak(hidden: true)])

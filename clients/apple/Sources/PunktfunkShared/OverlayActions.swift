@@ -158,18 +158,22 @@ public func keyLegend(_ k: String) -> String {
 
 /// One control's layout override: `x` and `y` place its centre as fractions of the layer's
 /// width and height, `scale` sizes it about that centre, `hidden` takes it out of the stream
-/// (the editor still shows it, ghosted). An absent field keeps the preset's value.
+/// (the editor still shows it, ghosted), `fullPress` makes a trigger full while touched. An
+/// absent field keeps the preset's value.
 public struct PadTweak: Equatable, Sendable {
     public var x: Float?
     public var y: Float?
     public var scale: Float?
     public var hidden: Bool
+    public var fullPress: Bool
 
-    public init(x: Float? = nil, y: Float? = nil, scale: Float? = nil, hidden: Bool = false) {
+    public init(x: Float? = nil, y: Float? = nil, scale: Float? = nil, hidden: Bool = false,
+                fullPress: Bool = false) {
         self.x = x
         self.y = y
         self.scale = scale
         self.hidden = hidden
+        self.fullPress = fullPress
     }
 }
 
@@ -288,7 +292,8 @@ public struct OverlayConfig: Equatable, Sendable {
                 out[id] = PadTweak(x: (t["x"] as? Double).map(Float.init),
                                    y: (t["y"] as? Double).map(Float.init),
                                    scale: (t["scale"] as? Double).map(Float.init),
-                                   hidden: t["hidden"] as? Bool ?? false)
+                                   hidden: t["hidden"] as? Bool ?? false,
+                                   fullPress: t["full_press"] as? Bool ?? false)
             }
             return out
         }
@@ -308,6 +313,7 @@ public struct OverlayConfig: Equatable, Sendable {
                 if let y = t.y { o["y"] = Double(y) }
                 if let s = t.scale { o["scale"] = Double(s) }
                 if t.hidden { o["hidden"] = true }
+                if t.fullPress { o["full_press"] = true }
                 return o
             }
         }

@@ -89,6 +89,13 @@ class VirtualPadTest {
     }
 
     @Test
+    fun a_full_press_tweak_reaches_only_its_trigger() {
+        val out = applyPadTweaks(padControls("full", 933f, 420f), mapOf("rt" to PadTweak(fullPress = true)), 933f, 420f)
+        assertTrue((out.first { it.id == "rt" } as PadControl.Trigger).fullPress)
+        assertTrue(!(out.first { it.id == "lt" } as PadControl.Trigger).fullPress)
+    }
+
+    @Test
     fun a_pad_config_picks_the_layer_class_for_its_overrides() {
         val pad = PadConfig(
             controls = mapOf("face" to PadTweak(hidden = true)),

@@ -294,6 +294,8 @@ the host. Under **Quick actions** in settings, pick a **Layout**
 or use **Edit layout** to move, resize and hide controls, separately for wide and upright screens.
 
 A stick points from its centre to your finger: touch anywhere on the ring and it moves at once.
+A trigger presses as far as your finger is down it. Select one in **Edit layout** and turn on
+**Full press on touch** to press it fully with any touch.
 
 ### Dual-screen handhelds
 

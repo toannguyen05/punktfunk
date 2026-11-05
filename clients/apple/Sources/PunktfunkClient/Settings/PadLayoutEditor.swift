@@ -1,11 +1,12 @@
 // The virtual controller's layout editor: the same `PadControlHost` views the stream mounts,
 // over a stand-in backdrop, with the editor's own SwiftUI gestures on top — the UIKit views
 // are mounted wire-less and non-interactive, so identical pixels answer to the editor's drag
-// instead of a game. Drag moves a control; tap selects it for the size slider and the
-// visibility toggle; hidden controls stay visible here, ghosted. The overrides land in the
-// class the screen is in (wide or narrow, `padControls`' own split), so an iPad edited in
-// landscape keeps its upright preset untouched. The chrome sits where the trio of small discs
-// is not: they ride the bottom edge on a wide layer and the top edge on a narrow one.
+// instead of a game. Drag moves a control; tap selects it for the size slider, the visibility
+// toggle and, on a trigger, full press; hidden controls stay visible here, ghosted. The
+// overrides land in the class the screen is in (wide or narrow, `padControls`' own split), so
+// an iPad edited in landscape keeps its upright preset untouched. The chrome sits where the
+// trio of small discs is not: they ride the bottom edge on a wide layer and the top edge on a
+// narrow one.
 
 #if os(iOS) || os(visionOS)
 import PunktfunkKit
@@ -123,6 +124,12 @@ struct PadLayoutEditor: View {
                     Text("Size · \(Int((size * 100).rounded()))%").font(.caption)
                     Slider(value: $size, in: VirtualPad.tweakScaleRange) { editing in
                         if !editing { update(narrow, c.id) { $0.scale = size } }
+                    }
+                    if case .trigger = c.kind {
+                        Toggle("Full press on touch", isOn: Binding(
+                            get: { c.fullPress },
+                            set: { on in update(narrow, c.id) { $0.fullPress = on } }))
+                            .font(.caption)
                     }
                 }
                 .padding(.horizontal, 16)

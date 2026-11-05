@@ -131,6 +131,22 @@
       }
     },
     {
+      "name": "a trigger's full press round-trips and a false one is not written",
+      "platform": "touch",
+      "blob": "{\"v\":2,\"pad\":{\"controls\":{\"rt\":{\"full_press\":true},\"lt\":{\"full_press\":false,\"hidden\":true}},\"controls_narrow\":{\"lt\":{\"full_press\":true}}}}",
+      "ring": [null, null, null, null, null, null],
+      "round_trip": {
+        "v": 2,
+        "ring": [null, null, null, null, null, null],
+        "shortcuts": [],
+        "pad": {
+          "layout": "full", "opacity": 0.45, "scale": 1,
+          "controls": {"rt": {"full_press": true}, "lt": {"hidden": true}},
+          "controls_narrow": {"lt": {"full_press": true}}
+        }
+      }
+    },
+    {
       "name": "an absent tweak field stays absent",
       "platform": "touch",
       "blob": "{\"pad\":{\"controls\":{\"rs\":{\"x\":0.5}}}}",

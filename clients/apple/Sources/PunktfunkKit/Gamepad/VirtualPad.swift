@@ -41,14 +41,16 @@ public enum PadControlKind: Equatable, Sendable {
     /// anywhere on the ring points the stick at once. The base never moves.
     case stick(axisX: UInt32, axisY: UInt32)
     /// The finger's position down the pill is the pull: the top is 0, the bottom is full.
+    /// A control with `fullPress` is full while touched.
     case trigger(axis: UInt32)
     /// A tap opens the quick-action ring; nothing goes on the wire.
     case ring
 }
 
-/// `id` is the tweak key in the blob (`PadTweak`); `sc` and `hidden` are the applied tweak —
-/// the geometry in `rect` and any discs is already sized by `sc`, and the touch and draw code
-/// multiplies only its named constants (stick radius, dead zones, label sizes) by it.
+/// `id` is the tweak key in the blob (`PadTweak`); `sc`, `hidden` and `fullPress` are the
+/// applied tweak — the geometry in `rect` and any discs is already sized by `sc`, and the touch
+/// and draw code multiplies only its named constants (stick radius, dead zones, label sizes) by
+/// it. `fullPress` only changes a trigger.
 public struct PadControl: Equatable, Sendable {
     public let id: String
     public let label: String
@@ -56,9 +58,11 @@ public struct PadControl: Equatable, Sendable {
     public let kind: PadControlKind
     public var sc: Float = 1
     public var hidden = false
+    public var fullPress = false
 
-    /// The same control at `rect`, sized by `sc`, possibly `hidden` — how a tweak is applied.
-    func tweaked(rect: PadRect, sc: Float, hidden: Bool) -> PadControl {
+    /// The same control at `rect`, sized by `sc`, possibly `hidden` or `fullPress` — how a
+    /// tweak is applied.
+    func tweaked(rect: PadRect, sc: Float, hidden: Bool, fullPress: Bool) -> PadControl {
         let kind: PadControlKind
         switch self.kind {
         case .buttons(let discs):
@@ -68,7 +72,7 @@ public struct PadControl: Equatable, Sendable {
         default:
             kind = self.kind
         }
-        return PadControl(id: id, label: label, rect: rect, kind: kind, sc: sc, hidden: hidden)
+        return PadControl(id: id, label: label, rect: rect, kind: kind, sc: sc, hidden: hidden, fullPress: fullPress)
     }
 }
 
@@ -186,9 +190,9 @@ public func padControls(layout: String, w: Float, h: Float) -> [PadControl] {
 }
 
 /// The preset with the user's overrides laid over it: each `PadTweak` moves a control's centre
-/// to fractions of the layer, scales it about that centre, or marks it hidden. Scales clamp to
-/// `VirtualPad.tweakScaleRange` and centres clamp so the control stays on the layer; a tweak
-/// with no control in this preset is ignored.
+/// to fractions of the layer, scales it about that centre, marks it hidden, or sets a trigger to
+/// full press. Scales clamp to `VirtualPad.tweakScaleRange` and centres clamp so the control
+/// stays on the layer; a tweak with no control in this preset is ignored.
 public func applyPadTweaks(_ controls: [PadControl], tweaks: [String: PadTweak], w: Float, h: Float) -> [PadControl] {
     controls.map { c in
         guard let t = tweaks[c.id] else { return c }
@@ -197,7 +201,7 @@ public func applyPadTweaks(_ controls: [PadControl], tweaks: [String: PadTweak],
         let ch = c.rect.h * sc
         let cx = min(max((t.x ?? ((c.rect.x + c.rect.w / 2) / w)) * w, min(cw / 2, w / 2)), max(w - cw / 2, w / 2))
         let cy = min(max((t.y ?? ((c.rect.y + c.rect.h / 2) / h)) * h, min(ch / 2, h / 2)), max(h - ch / 2, h / 2))
-        return c.tweaked(rect: PadRect(cx - cw / 2, cy - ch / 2, cw, ch), sc: sc, hidden: t.hidden)
+        return c.tweaked(rect: PadRect(cx - cw / 2, cy - ch / 2, cw, ch), sc: sc, hidden: t.hidden, fullPress: t.fullPress)
     }
 }
 

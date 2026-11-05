@@ -162,7 +162,7 @@ final class PadControlUIView: UIView {
             guard owner == nil else { return }
             owner = t
             Self.tick.impactOccurred()
-            emitTrigger(p.y)
+            emitTrigger(control.fullPress ? bounds.height : p.y)
         case .ring:
             guard owner == nil else { return }
             owner = t
@@ -182,7 +182,7 @@ final class PadControlUIView: UIView {
             guard t === owner else { return }
             emitStick(fromCentre(p))
         case .trigger:
-            guard t === owner else { return }
+            guard t === owner, !control.fullPress else { return }
             emitTrigger(p.y)
         case .ring:
             break

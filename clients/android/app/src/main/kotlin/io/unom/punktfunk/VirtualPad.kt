@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -130,19 +131,28 @@ internal sealed class PadControl(val id: String, val label: String, val rect: Pa
     class Stick(id: String, label: String, rect: PadRect, val axisX: Int, val axisY: Int, sc: Float = 1f, hidden: Boolean = false) :
         PadControl(id, label, rect, sc, hidden)
 
-    /** The finger's position down the pill is the pull: the top is 0, the bottom is full. */
-    class Trigger(id: String, label: String, rect: PadRect, val axis: Int, sc: Float = 1f, hidden: Boolean = false) :
-        PadControl(id, label, rect, sc, hidden)
+    /** The finger's position down the pill is the pull: the top is 0, the bottom is full.
+     *  With [fullPress] it is full while touched. */
+    class Trigger(
+        id: String,
+        label: String,
+        rect: PadRect,
+        val axis: Int,
+        sc: Float = 1f,
+        hidden: Boolean = false,
+        val fullPress: Boolean = false,
+    ) : PadControl(id, label, rect, sc, hidden)
 
     /** A tap opens the quick-action ring; nothing goes on the wire. */
     class Ring(rect: PadRect, sc: Float = 1f, hidden: Boolean = false) : PadControl("ring", "Quick actions", rect, sc, hidden)
 
-    /** The same control at [rect], sized by [sc], possibly [hidden] — how a tweak is applied. */
-    fun tweaked(rect: PadRect, sc: Float, hidden: Boolean): PadControl = when (this) {
+    /** The same control at [rect], sized by [sc], possibly [hidden], and for a trigger
+     *  [fullPress] — how a tweak is applied. */
+    fun tweaked(rect: PadRect, sc: Float, hidden: Boolean, fullPress: Boolean): PadControl = when (this) {
         is Buttons -> Buttons(id, label, rect, discs.map { it.copy(cx = it.cx * sc, cy = it.cy * sc, r = it.r * sc) }, sc, hidden)
         is Dpad -> Dpad(rect, sc, hidden)
         is Stick -> Stick(id, label, rect, axisX, axisY, sc, hidden)
-        is Trigger -> Trigger(id, label, rect, axis, sc, hidden)
+        is Trigger -> Trigger(id, label, rect, axis, sc, hidden, fullPress)
         is Ring -> Ring(rect, sc, hidden)
     }
 }
@@ -245,9 +255,9 @@ internal fun padControls(layout: String, w: Float, h: Float): List<PadControl> {
 
 /**
  * The preset with the user's overrides laid over it: each [PadTweak] moves a control's centre
- * to fractions of the layer, scales it about that centre, or marks it hidden. Scales clamp to
- * [PAD_TWEAK_SCALE_MIN]..[PAD_TWEAK_SCALE_MAX] and centres clamp so the control stays on the
- * layer; a tweak with no control in this preset is ignored.
+ * to fractions of the layer, scales it about that centre, marks it hidden, or sets a trigger to
+ * full press. Scales clamp to [PAD_TWEAK_SCALE_MIN]..[PAD_TWEAK_SCALE_MAX] and centres clamp so
+ * the control stays on the layer; a tweak with no control in this preset is ignored.
  */
 internal fun applyPadTweaks(controls: List<PadControl>, tweaks: Map<String, PadTweak>, w: Float, h: Float): List<PadControl> =
     controls.map { c ->
@@ -257,7 +267,7 @@ internal fun applyPadTweaks(controls: List<PadControl>, tweaks: Map<String, PadT
         val ch = c.rect.h * sc
         val cx = ((t.x ?: ((c.rect.x + c.rect.w / 2) / w)) * w).coerceIn(minOf(cw / 2, w / 2), maxOf(w - cw / 2, w / 2))
         val cy = ((t.y ?: ((c.rect.y + c.rect.h / 2) / h)) * h).coerceIn(minOf(ch / 2, h / 2), maxOf(h - ch / 2, h / 2))
-        c.tweaked(PadRect(cx - cw / 2, cy - ch / 2, cw, ch), sc, t.hidden)
+        c.tweaked(PadRect(cx - cw / 2, cy - ch / 2, cw, ch), sc, t.hidden, t.fullPress)
     }
 
 /**
@@ -529,9 +539,9 @@ private class TriggerTouch(val c: PadControl.Trigger, px: Float, private val sin
         if (owner != null) return
         owner = id
         haptics.tick()
-        emit(p.y)
+        emit(if (c.fullPress) h else p.y)
     }
-    override fun move(id: PointerId, p: Offset) { if (id == owner) emit(p.y) }
+    override fun move(id: PointerId, p: Offset) { if (id == owner && !c.fullPress) emit(p.y) }
     override fun up(id: PointerId) { if (id == owner) { owner = null; emit(0f) } }
     override fun reset() { owner = null; emit(0f) }
 
@@ -800,6 +810,15 @@ private fun PadLayoutStage(pad: PadConfig, onChange: (PadConfig) -> Unit, onBack
                             valueRange = PAD_TWEAK_SCALE_MIN..PAD_TWEAK_SCALE_MAX,
                             onValueChangeFinished = { update(ctl.id) { it.copy(scale = sz) } },
                         )
+                        if (ctl is PadControl.Trigger) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Full press on touch", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                Switch(
+                                    checked = ctl.fullPress,
+                                    onCheckedChange = { on -> update(ctl.id) { it.copy(fullPress = on) } },
+                                )
+                            }
+                        }
                     }
                 }
             }
