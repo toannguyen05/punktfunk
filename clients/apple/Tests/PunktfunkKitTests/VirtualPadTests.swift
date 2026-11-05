@@ -1,4 +1,4 @@
-// The virtual controller's pure parts — preset geometry, the D-pad's angle, the stick's travel,
+// The virtual controller's pure parts — preset geometry, the D-pad's angle, the stick's offset,
 // the trigger's pull — the Swift twin of the Android `VirtualPadTest`.
 
 import XCTest
@@ -105,7 +105,7 @@ final class VirtualPadTests: XCTestCase {
         XCTAssertEqual(wire(250, 0), [32767, 0])
         // Screen +y down is wire +y up.
         XCTAssertEqual(wire(0, -100), [0, 32767])
-        // Past the gate the travel is the deflection, not rescaled from zero.
+        // Past the gate the offset from the centre is the deflection, not rescaled from zero.
         XCTAssertEqual(wire(7, 0), [2294, 0])
         XCTAssertEqual(wire(30, 40), [9830, -13107])
     }

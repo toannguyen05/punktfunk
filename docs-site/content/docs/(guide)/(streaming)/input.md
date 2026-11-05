@@ -293,6 +293,8 @@ the host. Under **Quick actions** in settings, pick a **Layout**
 (**Full**, **Sticks and shoulders**, **D-pad and face buttons**), set **Opacity** and **Scale**,
 or use **Edit layout** to move, resize and hide controls, separately for wide and upright screens.
 
+A stick points from its centre to your finger: touch anywhere on the ring and it moves at once.
+
 ### Dual-screen handhelds
 
 On an Android handheld with a second screen of 7 inches or less, or a foldable half open, the

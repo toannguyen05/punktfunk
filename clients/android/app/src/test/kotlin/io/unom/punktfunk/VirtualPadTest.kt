@@ -121,7 +121,7 @@ class VirtualPadTest {
         assertEquals(32767 to 0, stickWire(250f, 0f, 100f, 6f))
         // Screen +y down is wire +y up.
         assertEquals(0 to 32767, stickWire(0f, -100f, 100f, 6f))
-        // Past the gate the travel is the deflection, not rescaled from zero.
+        // Past the gate the offset from the centre is the deflection, not rescaled from zero.
         assertEquals(2294 to 0, stickWire(7f, 0f, 100f, 6f))
         assertEquals(9830 to -13107, stickWire(30f, 40f, 100f, 6f))
     }

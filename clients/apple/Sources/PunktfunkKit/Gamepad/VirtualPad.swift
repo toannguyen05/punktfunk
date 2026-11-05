@@ -37,7 +37,8 @@ public enum PadControlKind: Equatable, Sendable {
     case buttons([PadDisc])
     /// Eight directions by angle from the centre, as the D-pad bits.
     case dpad
-    /// The first finger owns it; its travel from where it landed is the deflection.
+    /// The first finger owns it; its offset from the base's centre is the deflection, so a touch
+    /// anywhere on the ring points the stick at once. The base never moves.
     case stick(axisX: UInt32, axisY: UInt32)
     /// The finger's position down the pill is the pull: the top is 0, the bottom is full.
     case trigger(axis: UInt32)
@@ -225,8 +226,8 @@ public func dpadBits(dx: Float, dy: Float, dead: Float) -> UInt32 {
     }
 }
 
-/// A stick's wire pair for a travel of `dx`, `dy` points from where the finger landed: i16 with
-/// +y up, nothing inside `dead`, the travel itself past it, full deflection at `radius` and beyond.
+/// A stick's wire pair for a finger `dx`, `dy` points from the base's centre: i16 with +y up,
+/// nothing inside `dead`, the offset itself past it, full deflection at `radius` and beyond.
 /// `dead` only gates: subtracting it would stack on the game's own dead zone.
 public func stickWire(dx: Float, dy: Float, radius: Float, dead: Float) -> (x: Int32, y: Int32) {
     let mag = hypot(dx, dy)

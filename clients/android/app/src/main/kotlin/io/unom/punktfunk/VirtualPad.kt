@@ -125,7 +125,8 @@ internal sealed class PadControl(val id: String, val label: String, val rect: Pa
     /** Eight directions by angle from the centre, as `BTN_DPAD_*` bits. */
     class Dpad(rect: PadRect, sc: Float = 1f, hidden: Boolean = false) : PadControl("dpad", "D-pad", rect, sc, hidden)
 
-    /** The first finger owns it; its travel from where it landed is the deflection. */
+    /** The first finger owns it; its offset from the base's centre is the deflection, so a touch
+     *  anywhere on the ring points the stick at once. The base never moves. */
     class Stick(id: String, label: String, rect: PadRect, val axisX: Int, val axisY: Int, sc: Float = 1f, hidden: Boolean = false) :
         PadControl(id, label, rect, sc, hidden)
 
@@ -284,8 +285,8 @@ internal fun dpadBits(dx: Float, dy: Float, dead: Float): Int {
 }
 
 /**
- * A stick's wire pair for a travel of [dx], [dy] px from where the finger landed: i16 with +y up,
- * nothing inside [dead], the travel itself past it, full deflection at [radius] and beyond.
+ * A stick's wire pair for a finger [dx], [dy] px from the base's centre: i16 with +y up,
+ * nothing inside [dead], the offset itself past it, full deflection at [radius] and beyond.
  * [dead] only gates: subtracting it would stack on the game's own dead zone.
  */
 internal fun stickWire(dx: Float, dy: Float, radius: Float, dead: Float): Pair<Int, Int> {
@@ -487,7 +488,8 @@ private class DpadTouch(c: PadControl.Dpad, px: Float, sink: PadSink, haptics: C
 
 private class StickTouch(val c: PadControl.Stick, px: Float, private val sink: PadSink) : PadTouch() {
     private var owner: PointerId? = null
-    private var origin = Offset.Zero
+    /** The base's centre, where [StickFace] draws it. */
+    private val centre = Offset(c.rect.w * px / 2, c.rect.h * px / 2)
     private var lastX = 0
     private var lastY = 0
     private val radius = STICK_R * px * c.sc
@@ -499,10 +501,9 @@ private class StickTouch(val c: PadControl.Stick, px: Float, private val sink: P
     override fun down(id: PointerId, p: Offset) {
         if (owner != null) return
         owner = id
-        origin = p
-        emit(Offset.Zero)
+        emit(p - centre)
     }
-    override fun move(id: PointerId, p: Offset) { if (id == owner) emit(p - origin) }
+    override fun move(id: PointerId, p: Offset) { if (id == owner) emit(p - centre) }
     override fun up(id: PointerId) { if (id == owner) { owner = null; emit(Offset.Zero) } }
     override fun reset() { owner = null; emit(Offset.Zero) }
 

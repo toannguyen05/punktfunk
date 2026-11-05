@@ -83,7 +83,6 @@ final class PadControlUIView: UIView {
     private var fingers: [ObjectIdentifier: UInt32] = [:]
     private var held: UInt32 = 0
     private var owner: UITouch?
-    private var origin = CGPoint.zero
     private var lastX: Int32 = 0
     private var lastY: Int32 = 0
     private var lastPull: Int32 = 0
@@ -158,8 +157,7 @@ final class PadControlUIView: UIView {
         case .stick:
             guard owner == nil else { return }
             owner = t
-            origin = p
-            emitStick(.zero)
+            emitStick(fromCentre(p))
         case .trigger:
             guard owner == nil else { return }
             owner = t
@@ -182,7 +180,7 @@ final class PadControlUIView: UIView {
             sync()
         case .stick:
             guard t === owner else { return }
-            emitStick(CGPoint(x: p.x - origin.x, y: p.y - origin.y))
+            emitStick(fromCentre(p))
         case .trigger:
             guard t === owner else { return }
             emitTrigger(p.y)
@@ -256,6 +254,11 @@ final class PadControlUIView: UIView {
         held = next
         active = next != 0
         refresh()
+    }
+
+    /// A finger's offset from the stick's base, which `draw` centres in the view.
+    private func fromCentre(_ p: CGPoint) -> CGPoint {
+        CGPoint(x: p.x - bounds.midX, y: p.y - bounds.midY)
     }
 
     private func emitStick(_ d: CGPoint) {
